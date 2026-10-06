@@ -14,4 +14,3 @@ frontend:
   cache:
     paths:
       - .pub-cache/**/*
-``
