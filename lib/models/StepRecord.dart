@@ -27,6 +27,7 @@ import 'package:amplify_core/amplify_core.dart' as amplify_core;
 class StepRecord extends amplify_core.Model {
   static const classType = const _StepRecordModelType();
   final String id;
+  final String? _userName;
   final int? _stepCount;
   final amplify_core.TemporalDate? _date;
   final String? _notes;
@@ -44,6 +45,19 @@ class StepRecord extends amplify_core.Model {
       return StepRecordModelIdentifier(
         id: id
       );
+  }
+  
+  String get userName {
+    try {
+      return _userName!;
+    } catch(e) {
+      throw amplify_core.AmplifyCodeGenModelException(
+          amplify_core.AmplifyExceptionMessages.codeGenRequiredFieldForceCastExceptionMessage,
+          recoverySuggestion:
+            amplify_core.AmplifyExceptionMessages.codeGenRequiredFieldForceCastRecoverySuggestion,
+          underlyingException: e.toString()
+          );
+    }
   }
   
   int get stepCount {
@@ -84,11 +98,12 @@ class StepRecord extends amplify_core.Model {
     return _updatedAt;
   }
   
-  const StepRecord._internal({required this.id, required stepCount, required date, notes, createdAt, updatedAt}): _stepCount = stepCount, _date = date, _notes = notes, _createdAt = createdAt, _updatedAt = updatedAt;
+  const StepRecord._internal({required this.id, required userName, required stepCount, required date, notes, createdAt, updatedAt}): _userName = userName, _stepCount = stepCount, _date = date, _notes = notes, _createdAt = createdAt, _updatedAt = updatedAt;
   
-  factory StepRecord({String? id, required int stepCount, required amplify_core.TemporalDate date, String? notes}) {
+  factory StepRecord({String? id, required String userName, required int stepCount, required amplify_core.TemporalDate date, String? notes}) {
     return StepRecord._internal(
       id: id == null ? amplify_core.UUID.getUUID() : id,
+      userName: userName,
       stepCount: stepCount,
       date: date,
       notes: notes);
@@ -103,6 +118,7 @@ class StepRecord extends amplify_core.Model {
     if (identical(other, this)) return true;
     return other is StepRecord &&
       id == other.id &&
+      _userName == other._userName &&
       _stepCount == other._stepCount &&
       _date == other._date &&
       _notes == other._notes;
@@ -117,6 +133,7 @@ class StepRecord extends amplify_core.Model {
     
     buffer.write("StepRecord {");
     buffer.write("id=" + "$id" + ", ");
+    buffer.write("userName=" + "$_userName" + ", ");
     buffer.write("stepCount=" + (_stepCount != null ? _stepCount!.toString() : "null") + ", ");
     buffer.write("date=" + (_date != null ? _date!.format() : "null") + ", ");
     buffer.write("notes=" + "$_notes" + ", ");
@@ -127,21 +144,24 @@ class StepRecord extends amplify_core.Model {
     return buffer.toString();
   }
   
-  StepRecord copyWith({int? stepCount, amplify_core.TemporalDate? date, String? notes}) {
+  StepRecord copyWith({String? userName, int? stepCount, amplify_core.TemporalDate? date, String? notes}) {
     return StepRecord._internal(
       id: id,
+      userName: userName ?? this.userName,
       stepCount: stepCount ?? this.stepCount,
       date: date ?? this.date,
       notes: notes ?? this.notes);
   }
   
   StepRecord copyWithModelFieldValues({
+    ModelFieldValue<String>? userName,
     ModelFieldValue<int>? stepCount,
     ModelFieldValue<amplify_core.TemporalDate>? date,
     ModelFieldValue<String?>? notes
   }) {
     return StepRecord._internal(
       id: id,
+      userName: userName == null ? this.userName : userName.value,
       stepCount: stepCount == null ? this.stepCount : stepCount.value,
       date: date == null ? this.date : date.value,
       notes: notes == null ? this.notes : notes.value
@@ -150,6 +170,7 @@ class StepRecord extends amplify_core.Model {
   
   StepRecord.fromJson(Map<String, dynamic> json)  
     : id = json['id'],
+      _userName = json['userName'],
       _stepCount = (json['stepCount'] as num?)?.toInt(),
       _date = json['date'] != null ? amplify_core.TemporalDate.fromString(json['date']) : null,
       _notes = json['notes'],
@@ -157,11 +178,12 @@ class StepRecord extends amplify_core.Model {
       _updatedAt = json['updatedAt'] != null ? amplify_core.TemporalDateTime.fromString(json['updatedAt']) : null;
   
   Map<String, dynamic> toJson() => {
-    'id': id, 'stepCount': _stepCount, 'date': _date?.format(), 'notes': _notes, 'createdAt': _createdAt?.format(), 'updatedAt': _updatedAt?.format()
+    'id': id, 'userName': _userName, 'stepCount': _stepCount, 'date': _date?.format(), 'notes': _notes, 'createdAt': _createdAt?.format(), 'updatedAt': _updatedAt?.format()
   };
   
   Map<String, Object?> toMap() => {
     'id': id,
+    'userName': _userName,
     'stepCount': _stepCount,
     'date': _date,
     'notes': _notes,
@@ -171,6 +193,7 @@ class StepRecord extends amplify_core.Model {
 
   static final amplify_core.QueryModelIdentifier<StepRecordModelIdentifier> MODEL_IDENTIFIER = amplify_core.QueryModelIdentifier<StepRecordModelIdentifier>();
   static final ID = amplify_core.QueryField(fieldName: "id");
+  static final USERNAME = amplify_core.QueryField(fieldName: "userName");
   static final STEPCOUNT = amplify_core.QueryField(fieldName: "stepCount");
   static final DATE = amplify_core.QueryField(fieldName: "date");
   static final NOTES = amplify_core.QueryField(fieldName: "notes");
@@ -198,6 +221,12 @@ class StepRecord extends amplify_core.Model {
     ];
     
     modelSchemaDefinition.addField(amplify_core.ModelFieldDefinition.id());
+    
+    modelSchemaDefinition.addField(amplify_core.ModelFieldDefinition.field(
+      key: StepRecord.USERNAME,
+      isRequired: true,
+      ofType: amplify_core.ModelFieldType(amplify_core.ModelFieldTypeEnum.string)
+    ));
     
     modelSchemaDefinition.addField(amplify_core.ModelFieldDefinition.field(
       key: StepRecord.STEPCOUNT,

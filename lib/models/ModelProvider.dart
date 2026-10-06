@@ -26,7 +26,7 @@ export 'StepRecord.dart';
 
 class ModelProvider implements amplify_core.ModelProviderInterface {
   @override
-  String version = "1236cc131d24e91b1fd588533e388a6a";
+  String version = "1a856fea17a62075fc8c35129eeecca1";
   @override
   List<amplify_core.ModelSchema> modelSchemas = [StepRecord.schema];
   @override

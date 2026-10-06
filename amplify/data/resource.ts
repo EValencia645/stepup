@@ -3,6 +3,7 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 const schema = a.schema({
   StepRecord: a
     .model({
+      userName: a.string().required(),
       stepCount: a.integer().required(),
       date: a.date().required(),
       notes: a.string(),

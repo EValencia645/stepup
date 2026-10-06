@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart';
 import '../models/ModelProvider.dart';
@@ -12,79 +11,73 @@ class AddStepsScreen extends StatefulWidget {
 }
 
 class _AddStepsScreenState extends State<AddStepsScreen> {
-  final TextEditingController _stepsController = TextEditingController();
-
+  final _formKey = GlobalKey<FormState>();
+  final _stepsController = TextEditingController();
+  final _notesController = TextEditingController();
   bool _isSaving = false;
 
   @override
   void dispose() {
     _stepsController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
   Future<void> _saveSteps() async {
-  final text = _stepsController.text.trim();
-  final steps = int.tryParse(text);
+  if (!_formKey.currentState!.validate()) return;
 
-  if (steps == null || steps <= 0) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please enter a valid step count.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  setState(() {
-    _isSaving = true;
-  });
+  setState(() => _isSaving = true);
 
   try {
-    final now = DateTime.now();
+    // 1. Retrieve the current authenticated user's Cognito username
+    String currentUserName = 'User';
+    try {
+      final user = await Amplify.Auth.getCurrentUser();
+      currentUserName = user.username;
+    } catch (e) {
+      debugPrint('Could not get username: $e');
+    }
 
-    final stepRecord = StepRecord(
-      stepCount: steps,
-      date: TemporalDate(
-        DateTime(now.year, now.month, now.day),
-      ),
-      notes: 'Logged via StepUp',
+    final stepCount = int.parse(_stepsController.text.trim());
+    final notesText = _notesController.text.trim();
+
+    // 2. Create the record with the required userName field
+    final newRecord = StepRecord(
+      userName: currentUserName,
+      stepCount: stepCount,
+      date: TemporalDate.now(),
+      notes: notesText.isNotEmpty ? notesText : null,
     );
 
-    final request = ModelMutations.create(stepRecord);
-
-    final response =
-        await Amplify.API.mutate(request: request).response;
+    final request = ModelMutations.create(newRecord);
+    final response = await Amplify.API.mutate(request: request).response;
 
     if (response.hasErrors) {
-      safePrint('ERRORS: ${response.errors}');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.errors.first.message),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint('>>> GRAPHQL ERRORS: ${response.errors}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('Error: ${response.errors.first.message}'),
+          ),
+        );
+      }
     } else {
-      safePrint(
-        'SUCCESS! Saved record with id: ${response.data?.id}',
-      );
-
-      Navigator.pop(context, steps);
+      debugPrint('>>> MUTATION SUCCESS: ${response.data}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Steps saved successfully!'),
+          ),
+        );
+        Navigator.pop(context, true);
+      }
     }
-  } on ApiException catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error: ${e.message}'),
-        backgroundColor: Colors.red,
-      ),
-    );
+  } catch (e) {
+    debugPrint('>>> EXCEPTION: $e');
   } finally {
-    if (mounted) {
-      setState(() {
-        _isSaving = false;
-      });
-    }
+    if (mounted) setState(() => _isSaving = false);
   }
 }
 
@@ -94,34 +87,53 @@ class _AddStepsScreenState extends State<AddStepsScreen> {
       appBar: AppBar(
         title: const Text('Add Steps'),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
+              TextFormField(
                 controller: _stepsController,
                 keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
                 decoration: const InputDecoration(
                   labelText: 'Enter Steps',
-                  hintText: 'e.g. 5000',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.directions_walk),
                 ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter step count';
+                  }
+                  if (int.tryParse(val.trim()) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Notes (optional)',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.note),
+                ),
+              ),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isSaving ? null : _saveSteps,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: _isSaving
-                    ? const CircularProgressIndicator()
-                    : const Text('Save Steps'),
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Save Steps', style: TextStyle(fontSize: 16)),
               ),
             ],
           ),
