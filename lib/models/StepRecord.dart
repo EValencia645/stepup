@@ -134,11 +134,11 @@ class StepRecord extends amplify_core.Model {
     buffer.write("StepRecord {");
     buffer.write("id=" + "$id" + ", ");
     buffer.write("userName=" + "$_userName" + ", ");
-    buffer.write("stepCount=" + (_stepCount != null ? _stepCount!.toString() : "null") + ", ");
-    buffer.write("date=" + (_date != null ? _date!.format() : "null") + ", ");
+    buffer.write("stepCount=" + (_stepCount != null ? _stepCount.toString() : "null") + ", ");
+    buffer.write("date=" + (_date != null ? _date.format() : "null") + ", ");
     buffer.write("notes=" + "$_notes" + ", ");
-    buffer.write("createdAt=" + (_createdAt != null ? _createdAt!.format() : "null") + ", ");
-    buffer.write("updatedAt=" + (_updatedAt != null ? _updatedAt!.format() : "null"));
+    buffer.write("createdAt=" + (_createdAt != null ? _createdAt.format() : "null") + ", ");
+    buffer.write("updatedAt=" + (_updatedAt != null ? _updatedAt.format() : "null"));
     buffer.write("}");
     
     return buffer.toString();

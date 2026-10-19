@@ -36,6 +36,7 @@ dependencies:
   amplify_auth_cognito: ^2.11.0
   amplify_api: ^2.11.0 # Communicates with DynamoDB / AppSync
   amplify_authenticator: ^2.7.2
+  lottie: ^3.1.2
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 dev_dependencies:
@@ -60,10 +61,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/animations/walking.json
+    - assets/animations/trophy.json
+    - assets/animations/empty.json
+    - assets/animations/team.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

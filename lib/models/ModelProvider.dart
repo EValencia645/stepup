@@ -21,24 +21,36 @@
 
 import 'package:amplify_core/amplify_core.dart' as amplify_core;
 import 'StepRecord.dart';
+import 'Team.dart';
+import 'TeamMember.dart';
 
 export 'StepRecord.dart';
+export 'Team.dart';
+export 'TeamMember.dart';
 
 class ModelProvider implements amplify_core.ModelProviderInterface {
   @override
   String version = "1a856fea17a62075fc8c35129eeecca1";
   @override
-  List<amplify_core.ModelSchema> modelSchemas = [StepRecord.schema];
+  List<amplify_core.ModelSchema> modelSchemas = [
+    StepRecord.schema,
+    Team.schema,
+    TeamMember.schema,
+  ];
   @override
   List<amplify_core.ModelSchema> customTypeSchemas = [];
   static final ModelProvider _instance = ModelProvider();
 
   static ModelProvider get instance => _instance;
-  
+
   amplify_core.ModelType getModelTypeByModelName(String modelName) {
     switch(modelName) {
       case "StepRecord":
         return StepRecord.classType;
+      case "Team":
+        return Team.classType;
+      case "TeamMember":
+        return TeamMember.classType;
       default:
         throw Exception("Failed to find model in model provider for model name: " + modelName);
     }

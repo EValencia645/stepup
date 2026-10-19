@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart';
+import 'package:lottie/lottie.dart';
 import '../models/ModelProvider.dart';
 
 class LeaderboardScreen extends StatefulWidget {
@@ -23,12 +24,39 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     });
   }
 
+  /// Returns the user's email address as their display name.
+  /// Falls back to the Cognito username if attributes can't be fetched.
+  Future<String> _getDisplayName() async {
+    try {
+      final attributes = await Amplify.Auth.fetchUserAttributes();
+      final emailAttr = attributes.firstWhere(
+        (a) => a.userAttributeKey == CognitoUserAttributeKey.email,
+        orElse: () => const AuthUserAttribute(
+          userAttributeKey: CognitoUserAttributeKey.email,
+          value: '',
+        ),
+      );
+      if (emailAttr.value.isNotEmpty) return emailAttr.value;
+    } catch (e) {
+      debugPrint('>>> Could not fetch user attributes: $e');
+    }
+    try {
+      final user = await Amplify.Auth.getCurrentUser();
+      return user.username;
+    } catch (e) {
+      return 'User';
+    }
+  }
+
   Future<void> _fetchLeaderboardData() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
-      // 1. Fetch all StepRecord rows from DynamoDB
+      // 1. Get the current authenticated user's display name (email)
+      final currentUserName = await _getDisplayName();
+
+      // 2. Fetch all StepRecord rows from DynamoDB
       final request = ModelQueries.list(
         StepRecord.classType,
         limit: 1000,
@@ -52,24 +80,30 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         return;
       }
 
-      // 2. Sum up all step records directly from DB
-      int totalSteps = 0;
+      // 3. Group step counts by userName
+      final Map<String, int> stepsByUser = {};
       for (final record in records) {
-        totalSteps += record.stepCount;
-        debugPrint('Record ID: ${record.id} | Steps: ${record.stepCount}');
+        final name = record.userName;
+        stepsByUser[name] = (stepsByUser[name] ?? 0) + record.stepCount;
+        debugPrint('User: $name | Record steps: ${record.stepCount}');
       }
 
-      debugPrint('>>> FINAL CALCULATED TOTAL: $totalSteps');
+      // 4. Sort users by total steps descending and assign ranks
+      final sortedUsers = stepsByUser.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
 
-      // 3. Clean UI display - No UUIDs, no long strings
-      final List<Map<String, dynamic>> formattedList = [
-        {
-          'rank': 1,
-          'name': 'You',
-          'steps': totalSteps,
-          'isCurrentUser': true,
-        }
-      ];
+      final List<Map<String, dynamic>> formattedList = [];
+      for (int i = 0; i < sortedUsers.length; i++) {
+        final entry = sortedUsers[i];
+        final isCurrentUser = entry.key == currentUserName;
+        formattedList.add({
+          'rank': i + 1,
+          'name': isCurrentUser ? 'You' : entry.key,
+          'steps': entry.value,
+          'isCurrentUser': isCurrentUser,
+        });
+        debugPrint('Rank ${i + 1}: ${entry.key} | Total steps: ${entry.value}');
+      }
 
       if (!mounted) return;
       setState(() {
@@ -103,6 +137,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       appBar: AppBar(
         title: const Text('Leaderboard'),
         elevation: 1,
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
             tooltip: 'Refresh Leaderboard',
@@ -127,11 +166,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.directions_walk, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
+                      Lottie.asset(
+                        'assets/animations/empty.json',
+                        height: 200,
+                        fit: BoxFit.contain,
+                      ),
                       const Text(
-                        'No step records found in AWS.',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                        'No steps logged yet.',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
